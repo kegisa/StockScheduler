@@ -1,0 +1,15 @@
+api :
+  tinkoffService : ${gcpTinkoffService}
+  getPricesByFigies : /prices
+
+spring:
+  redis:
+    host: ${redishost}
+    port: ${redisport}
+    password: ${redispass}
+
+logging:
+  level:
+    root: INFO
+  file:
+    name: logs/ShedulerService.log
