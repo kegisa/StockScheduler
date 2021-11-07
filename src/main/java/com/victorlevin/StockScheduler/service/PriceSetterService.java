@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -21,22 +22,31 @@ public class PriceSetterService {
     public void updatePrices() {
         long startTime = System.currentTimeMillis();
 
-        List<String> figies = new ArrayList<>();
+        List<StockPrice> stockPrices = new ArrayList<>();
         stockPriceRepository.findAll().forEach(i -> {
             if(Objects.nonNull(i)) {
-                figies.add(i.getFigi());
+                stockPrices.add(i);
             }
         });
-        log.info("Updating {}", figies);
+
         log.info("Time for getting from Redis - {}", System.currentTimeMillis() - startTime);
-        if(!figies.isEmpty()) {
-            long startTinkoff = System.currentTimeMillis();
-            List<StockPrice> newPrices = tinkoffPriceService.getPricesByFigies(figies);
-            log.info("Time for getting from Tinkoff - {}", System.currentTimeMillis() - startTinkoff);
+
+        if(!stockPrices.isEmpty()) {
+            List<StockPrice> sourceTinkoff = stockPrices.stream().filter(s -> s.getSource().equals("TINKOFF")).collect(Collectors.toList());
+            List<StockPrice> getFromTinkoff = getFromTinkoff(sourceTinkoff);
             long startSaving = System.currentTimeMillis();
-            stockPriceRepository.saveAll(newPrices);
+            stockPriceRepository.saveAll(getFromTinkoff);
             log.info("Time for saving to Redis - {}", System.currentTimeMillis() - startSaving);
         }
         log.info("Time for update - {}", System.currentTimeMillis() - startTime);
+    }
+
+    private List<StockPrice> getFromTinkoff(List<StockPrice> getFromTinkoff){
+        List<String> figies = getFromTinkoff.stream().map(s -> s.getFigi()).collect(Collectors.toList());
+        log.info("Get {} prices from Tinkoff - {}", figies.size(), figies);
+        long startTinkoff = System.currentTimeMillis();
+        List<StockPrice> newPrices = tinkoffPriceService.getPricesByFigies(figies);
+        log.info("Time for getting from Tinkoff - {}", System.currentTimeMillis() - startTinkoff);
+        return newPrices;
     }
 }

@@ -39,7 +39,7 @@ public class TinkoffPriceService {
                 = this.restTemplate.postForEntity(url, entity, StockFigiesPricesDto.class);
 
         if(responseEntity.getStatusCode() == HttpStatus.OK) {
-            responseEntity.getBody().getPrices().forEach(i -> prices.add(new StockPrice(i.getFigi(), i.getPrice())));
+            responseEntity.getBody().getPrices().forEach(i -> prices.add(new StockPrice(i.getFigi(), i.getPrice(), "TINKOFF")));
             return prices;
         } else {
             throw new TinkoffServiceException(responseEntity.toString());
